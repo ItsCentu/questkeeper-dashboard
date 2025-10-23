@@ -1,0 +1,550 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>QuestKeeper Dashboard — Discord Bot</title>
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root{
+            --bg1:#0f172a; --bg2:#071033; --accent:#7c3aed; --accent-2:#06b6d4;
+            --glass: rgba(255,255,255,0.06);
+            --glass-2: rgba(255,255,255,0.03);
+            --text: #e6eef8;
+            --success: #22c55e;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+        }
+        *{box-sizing:border-box}
+        html,body{height:100%;margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial;color:var(--text);background:linear-gradient(120deg,var(--bg1),var(--bg2));-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
+        
+        /* animated background blobs */
+        .bg-anim{position:fixed;inset:0;overflow:hidden;z-index:0;pointer-events:none}
+        .blob{
+            position:absolute;border-radius:50%;filter:blur(70px);
+            transform:translate3d(0,0,0);
+            opacity:0.6;
+            mix-blend-mode:screen;
+            animation:float 12s ease-in-out infinite;
+        }
+        .blob.b1{width:520px;height:520px;left:-10%;top:-10%;background:linear-gradient(45deg,var(--accent),#60a5fa);animation-duration:16s}
+        .blob.b2{width:420px;height:420px;right:-8%;top:10%;background:linear-gradient(45deg,var(--accent-2),#34d399);animation-duration:14s}
+        .blob.b3{width:300px;height:300px;left:20%;bottom:-12%;background:linear-gradient(45deg,#f43f5e,#fb923c);animation-duration:18s}
+        .blob.b4{width:250px;height:250px;right:15%;bottom:20%;background:linear-gradient(45deg,var(--accent),var(--accent-2));animation-duration:20s;animation-delay:-5s}
+        @keyframes float{
+            0%{transform:translateY(0) translateX(0) scale(1)}
+            33%{transform:translateY(-30px) translateX(20px) scale(1.02)}
+            66%{transform:translateY(20px) translateX(-25px) scale(0.98)}
+            100%{transform:translateY(0) translateX(0) scale(1)}
+        }
+
+        /* Same CSS as your dashboard.php file */
+        .dashboard-container{position:relative;z-index:2;min-height:100vh;padding:2rem}
+        .header{max-width:1400px;margin:0 auto 2rem;display:flex;justify-content:space-between;align-items:center;padding:0 1rem}
+        .header h1{margin:0;font-size:1.8rem;font-weight:700}
+        .user-info{display:flex;align-items:center;gap:12px;background:var(--glass);padding:8px 16px;border-radius:12px;border:1px solid var(--glass-2)}
+        .user-avatar{width:32px;height:32px;border-radius:50%;background:linear-gradient(45deg,var(--accent),var(--accent-2))}
+        
+        .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:10px 16px;border-radius:8px;font-weight:500;border:0;cursor:pointer;color:white;text-decoration:none;transition:all 0.2s ease}
+        .btn-primary{background:linear-gradient(90deg,var(--accent),#4f46e5);box-shadow:0 4px 16px rgba(124,58,237,0.25)}
+        .btn-secondary{background:var(--glass);border:1px solid var(--glass-2);color:var(--text)}
+        .btn:hover{transform:translateY(-1px)}
+        
+        .auth-container{text-align:center;padding:60px 20px}
+        .auth-card{background:var(--glass);padding:40px;border-radius:16px;border:1px solid var(--glass-2);max-width:400px;margin:0 auto}
+        
+        /* Dashboard Content Styles */
+        #dashboardContent{max-width:1400px;margin:0 auto;padding:0 1rem}
+        
+        /* Stats Grid */
+        .stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:1.5rem;margin-bottom:2rem}
+        .stat-card{background:var(--glass);padding:1.5rem;border-radius:12px;border:1px solid var(--glass-2);display:flex;align-items:center;gap:1rem;transition:transform 0.2s ease}
+        .stat-card:hover{transform:translateY(-2px)}
+        .stat-icon{font-size:2rem;width:48px;height:48px;display:flex;align-items:center;justify-content:center;background:linear-gradient(45deg,var(--accent),var(--accent-2));border-radius:10px}
+        .stat-number{font-size:1.8rem;font-weight:700;color:var(--text);margin-bottom:0.25rem}
+        .stat-label{font-size:0.85rem;color:#cfe7ff7a;text-transform:uppercase;letter-spacing:0.5px}
+        
+        /* Server Section */
+        .server-section{margin-bottom:2rem}
+        .server-section h2{margin:0 0 1rem;color:var(--text);font-size:1.4rem}
+        .server-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1rem}
+        .server-card{background:var(--glass);padding:1rem;border-radius:12px;border:1px solid var(--glass-2);display:flex;align-items:center;gap:1rem;cursor:pointer;transition:all 0.2s ease}
+        .server-card:hover{background:rgba(255,255,255,0.08);transform:translateY(-1px)}
+        .server-card.active{border-color:var(--accent);background:rgba(124,58,237,0.1)}
+        .server-avatar{width:48px;height:48px;border-radius:50%;background:linear-gradient(45deg,var(--accent),var(--accent-2));display:flex;align-items:center;justify-content:center;font-weight:700;color:white}
+        .server-info h3{margin:0;font-size:1rem;color:var(--text)}
+        .server-info p{margin:0;font-size:0.85rem;color:#cfe7ff7a}
+        
+        /* Quest Section */
+        .quest-section{margin-bottom:2rem}
+        .section-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem}
+        .section-header h2{margin:0;color:var(--text);font-size:1.4rem}
+        .section-actions{display:flex;gap:0.5rem}
+        .quest-list{display:flex;flex-direction:column;gap:1rem}
+        .quest-item{background:var(--glass);padding:1.5rem;border-radius:12px;border:1px solid var(--glass-2);transition:transform 0.2s ease}
+        .quest-item:hover{transform:translateY(-1px)}
+        .quest-item.completed{border-left:4px solid var(--success)}
+        .quest-item.claimed{border-left:4px solid var(--accent-2)}
+        .quest-item.open{border-left:4px solid var(--warning)}
+        .quest-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:1rem}
+        .quest-title{font-size:1.1rem;font-weight:600;color:var(--text);margin:0}
+        .quest-status{padding:0.25rem 0.75rem;border-radius:20px;font-size:0.8rem;font-weight:500}
+        .quest-status.completed{background:rgba(34,197,94,0.2);color:var(--success)}
+        .quest-status.claimed{background:rgba(6,182,212,0.2);color:var(--accent-2)}
+        .quest-status.open{background:rgba(245,158,11,0.2);color:var(--warning)}
+        .quest-description{color:#cfe7ff9a;margin-bottom:1rem;line-height:1.5}
+        .quest-meta{display:flex;justify-content:space-between;align-items:center;font-size:0.85rem;color:#cfe7ff7a}
+        .quest-reward{color:var(--accent);font-weight:600}
+        
+        /* Leaderboard */
+        .stats-section{margin-bottom:2rem}
+        .stats-section h2{margin:0 0 1rem;color:var(--text);font-size:1.4rem}
+        .leaderboard{background:var(--glass);border-radius:12px;border:1px solid var(--glass-2);overflow:hidden}
+        .leaderboard-item{display:flex;align-items:center;gap:1rem;padding:1rem;border-bottom:1px solid var(--glass-2)}
+        .leaderboard-item:last-child{border-bottom:none}
+        .rank{width:32px;height:32px;display:flex;align-items:center;justify-content:center;background:linear-gradient(45deg,var(--accent),var(--accent-2));border-radius:50%;font-weight:700;color:white;font-size:0.9rem}
+        .user-avatar-small{width:40px;height:40px;border-radius:50%;background:linear-gradient(45deg,#60a5fa,#34d399)}
+        .user-info-small{flex:1}
+        .user-info-small h4{margin:0;color:var(--text);font-size:0.95rem}
+        .user-info-small p{margin:0;color:#cfe7ff7a;font-size:0.8rem}
+        .user-stats{text-align:right;color:var(--accent);font-weight:600;font-size:0.9rem}
+        
+        /* Configuration */
+        .config-section{margin-bottom:2rem}
+        .config-section h2{margin:0 0 1rem;color:var(--text);font-size:1.4rem}
+        .config-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:1rem;margin-bottom:1.5rem}
+        .config-card{background:var(--glass);padding:1.5rem;border-radius:12px;border:1px solid var(--glass-2)}
+        .config-card h3{margin:0 0 0.5rem;color:var(--text);font-size:1rem}
+        .config-card p{margin:0 0 1rem;color:#cfe7ff7a;font-size:0.85rem}
+        .config-select{width:100%;padding:0.75rem;background:rgba(255,255,255,0.05);border:1px solid var(--glass-2);border-radius:8px;color:var(--text);font-size:0.9rem}
+        .config-select:focus{outline:none;border-color:var(--accent)}
+        .config-actions{text-align:center}
+        
+        /* Responsive */
+        @media (max-width:768px){
+            .stats-grid{grid-template-columns:1fr}
+            .section-header{flex-direction:column;gap:1rem;align-items:stretch}
+            .section-actions{justify-content:center}
+            .quest-header{flex-direction:column;gap:0.5rem;align-items:stretch}
+            .quest-meta{flex-direction:column;gap:0.5rem;align-items:flex-start}
+            .config-grid{grid-template-columns:1fr}
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-anim" aria-hidden="true">
+        <div class="blob b1"></div>
+        <div class="blob b2"></div>
+        <div class="blob b3"></div>
+        <div class="blob b4"></div>
+    </div>
+
+    <div class="dashboard-container">
+        <header class="header">
+            <h1>QuestKeeper Dashboard</h1>
+            <div class="user-info" id="userInfo" style="display:none;">
+                <div class="user-avatar" id="userAvatar"></div>
+                <span class="user-name" id="userName">Loading...</span>
+                <button class="btn btn-secondary" onclick="logout()">Logout</button>
+            </div>
+        </header>
+
+        <div id="authContainer" class="auth-container">
+            <div class="auth-card">
+                <h2 style="margin-top:0;color:var(--text);">Welcome to QuestKeeper</h2>
+                <p style="color:#cfe7ff7a;margin-bottom:30px;">Connect your Discord account to access the dashboard</p>
+                <button class="btn btn-primary" onclick="loginWithDiscord()">
+                    🎮 Login with Discord
+                </button>
+            </div>
+        </div>
+
+        <div id="dashboardContent" style="display:none;">
+            <!-- Overview Stats -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon">🎯</div>
+                    <div class="stat-info">
+                        <div class="stat-number" id="totalQuests">12</div>
+                        <div class="stat-label">Total Quests</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">⚡</div>
+                    <div class="stat-info">
+                        <div class="stat-number" id="activeQuests">3</div>
+                        <div class="stat-label">Active Quests</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">✅</div>
+                    <div class="stat-info">
+                        <div class="stat-number" id="completedQuests">8</div>
+                        <div class="stat-label">Completed</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">👥</div>
+                    <div class="stat-info">
+                        <div class="stat-number" id="activeUsers">15</div>
+                        <div class="stat-label">Active Users</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Server Selection -->
+            <div class="server-section">
+                <h2>Your Discord Servers</h2>
+                <div class="server-grid" id="serverGrid">
+                    <!-- Demo servers will be populated here -->
+                </div>
+            </div>
+
+            <!-- Quest Management -->
+            <div class="quest-section">
+                <div class="section-header">
+                    <h2>Recent Quest Activity</h2>
+                    <div class="section-actions">
+                        <button class="btn btn-secondary" onclick="refreshData()">🔄 Refresh</button>
+                        <button class="btn btn-primary" onclick="showCreateQuest()">+ Create Quest</button>
+                    </div>
+                </div>
+                
+                <div class="quest-list" id="questList">
+                    <!-- Quest items will be populated here -->
+                </div>
+            </div>
+
+            <!-- User Statistics -->
+            <div class="stats-section">
+                <h2>Top Quest Masters</h2>
+                <div class="leaderboard" id="leaderboard">
+                    <!-- User stats will be populated here -->
+                </div>
+            </div>
+
+            <!-- Bot Configuration -->
+            <div class="config-section">
+                <h2>Bot Configuration</h2>
+                <div class="config-grid">
+                    <div class="config-card">
+                        <h3>� Quest Channel</h3>
+                        <p>Channel where new quests are posted</p>
+                        <select class="config-select">
+                            <option value="1401628674108821665">#quest-board</option>
+                            <option value="0">Select Channel...</option>
+                        </select>
+                    </div>
+                    <div class="config-card">
+                        <h3>📁 Quest Category</h3>
+                        <p>Category for private quest discussions</p>
+                        <select class="config-select">
+                            <option value="1401658620579680336">Quest Threads</option>
+                            <option value="0">Select Category...</option>
+                        </select>
+                    </div>
+                    <div class="config-card">
+                        <h3>📋 Log Channel</h3>
+                        <p>Channel for quest activity logs</p>
+                        <select class="config-select">
+                            <option value="1401661349880266762">#quest-logs</option>
+                            <option value="0">Select Channel...</option>
+                        </select>
+                    </div>
+                    <div class="config-card">
+                        <h3>📚 Archive Channel</h3>
+                        <p>Channel for completed quest transcripts</p>
+                        <select class="config-select">
+                            <option value="1401669471982190662">#quest-archive</option>
+                            <option value="0">Select Channel...</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="config-actions">
+                    <button class="btn btn-primary" onclick="saveConfig()">💾 Save Configuration</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Discord OAuth configuration
+        const CLIENT_ID = '1401648655999566035';
+        const REDIRECT_URI = window.location.origin + window.location.pathname;
+        
+        // Check for OAuth callback
+        const urlParams = new URLSearchParams(window.location.search);
+        const code = urlParams.get('code');
+        const error = urlParams.get('error');
+
+        if (error) {
+            alert('OAuth Error: ' + error);
+        } else if (code) {
+            // Handle OAuth callback
+            handleOAuthCallback(code);
+        } else {
+            // Check if user is already logged in (stored in localStorage)
+            const userData = localStorage.getItem('discordUser');
+            if (userData) {
+                showDashboard(JSON.parse(userData));
+            }
+        }
+
+        function loginWithDiscord() {
+            const oauthUrl = `https://discord.com/api/oauth2/authorize?` + 
+                `client_id=${CLIENT_ID}&` +
+                `redirect_uri=${encodeURIComponent(REDIRECT_URI)}&` +
+                `response_type=code&` +
+                `scope=identify guilds`;
+            
+            window.location.href = oauthUrl;
+        }
+
+        async function handleOAuthCallback(code) {
+            try {
+                // Note: In a real static implementation, you'd need a serverless function
+                // or CORS proxy to handle the token exchange since Discord doesn't allow
+                // CORS requests from browsers to their token endpoint.
+                
+                alert('OAuth callback received! In a full implementation, this would exchange the code for user data.');
+                
+                // For demo purposes, simulate logged in user
+                const mockUser = {
+                    id: '123456789',
+                    username: 'Demo User',
+                    avatar: null
+                };
+                
+                localStorage.setItem('discordUser', JSON.stringify(mockUser));
+                showDashboard(mockUser);
+                
+                // Clean up URL
+                window.history.replaceState({}, document.title, window.location.pathname);
+                
+            } catch (error) {
+                console.error('OAuth error:', error);
+                alert('Failed to log in with Discord. Please try again.');
+            }
+        }
+
+        function showDashboard(userData) {
+            document.getElementById('authContainer').style.display = 'none';
+            document.getElementById('dashboardContent').style.display = 'block';
+            document.getElementById('userInfo').style.display = 'flex';
+            
+            document.getElementById('userName').textContent = userData.username;
+            
+            if (userData.avatar) {
+                document.getElementById('userAvatar').style.backgroundImage = 
+                    `url('https://cdn.discordapp.com/avatars/${userData.id}/${userData.avatar}.png')`;
+                document.getElementById('userAvatar').style.backgroundSize = 'cover';
+            }
+            
+            // Populate dashboard with demo data
+            setTimeout(() => {
+                populateDashboard();
+            }, 500);
+        }
+
+        function logout() {
+            localStorage.removeItem('discordUser');
+            document.getElementById('authContainer').style.display = 'block';
+            document.getElementById('dashboardContent').style.display = 'none';
+            document.getElementById('userInfo').style.display = 'none';
+        }
+
+        // Demo data for the dashboard
+        const demoServers = [
+            { id: '1', name: 'Adventure Guild', members: 234, icon: 'AG', quests: 8, active: true },
+            { id: '2', name: 'Quest Masters', members: 156, icon: 'QM', quests: 4, active: false },
+            { id: '3', name: 'Dungeon Crawlers', members: 89, icon: 'DC', quests: 12, active: false }
+        ];
+
+        const demoQuests = [
+            {
+                id: 'Q001',
+                title: 'Design a Guild Logo',
+                description: 'Looking for someone to create a professional logo for our gaming guild. Should include fantasy elements and our guild name.',
+                reward: '50 gold + Discord Nitro',
+                status: 'open',
+                author: 'GuildMaster_Alex',
+                created: '2 hours ago',
+                server: 'Adventure Guild'
+            },
+            {
+                id: 'Q002', 
+                title: 'Help with Discord Bot Setup',
+                description: 'Need assistance setting up a music bot and configuring permissions properly.',
+                reward: '30 gold',
+                status: 'claimed',
+                author: 'ModeratorSarah',
+                claimer: 'TechWiz_Mike',
+                created: '5 hours ago',
+                server: 'Quest Masters'
+            },
+            {
+                id: 'Q003',
+                title: 'Beta Test New Game',
+                description: 'Looking for experienced gamers to test our new indie RPG and provide detailed feedback.',
+                reward: 'Early access + Credits',
+                status: 'completed',
+                author: 'DevStudio_Team',
+                completer: 'BetaTester_Sam',
+                created: '1 day ago',
+                server: 'Dungeon Crawlers'
+            },
+            {
+                id: 'Q004',
+                title: 'Write Quest Descriptions',
+                description: 'Need creative writing for 10 in-game quest descriptions. Fantasy theme preferred.',
+                reward: '40 gold',
+                status: 'open',
+                author: 'StoryMaster_Luna',
+                created: '3 hours ago',
+                server: 'Adventure Guild'
+            },
+            {
+                id: 'Q005',
+                title: 'Stream Highlight Video',
+                description: 'Create a 2-minute highlight reel from recent Twitch streams. Editing skills required.',
+                reward: '60 gold + Shoutout',
+                status: 'claimed',
+                author: 'Streamer_Phoenix',
+                claimer: 'VideoEditor_Max',
+                created: '6 hours ago',
+                server: 'Quest Masters'
+            }
+        ];
+
+        const demoLeaderboard = [
+            { rank: 1, name: 'QuestMaster_Pro', avatar: 'QP', created: 15, claimed: 23, completed: 18 },
+            { rank: 2, name: 'AdventurerElite', avatar: 'AE', created: 8, claimed: 19, completed: 16 },
+            { rank: 3, name: 'TaskCompleter', avatar: 'TC', created: 12, claimed: 14, completed: 14 },
+            { rank: 4, name: 'GuildHelper', avatar: 'GH', created: 6, claimed: 17, completed: 12 },
+            { rank: 5, name: 'QuestSeeker', avatar: 'QS', created: 9, claimed: 15, completed: 11 }
+        ];
+
+        function populateDashboard() {
+            // Populate servers
+            const serverGrid = document.getElementById('serverGrid');
+            serverGrid.innerHTML = demoServers.map(server => `
+                <div class="server-card ${server.active ? 'active' : ''}" onclick="selectServer('${server.id}')">
+                    <div class="server-avatar">${server.icon}</div>
+                    <div class="server-info">
+                        <h3>${server.name}</h3>
+                        <p>${server.members} members • ${server.quests} active quests</p>
+                    </div>
+                </div>
+            `).join('');
+
+            // Populate quests
+            const questList = document.getElementById('questList');
+            questList.innerHTML = demoQuests.map(quest => `
+                <div class="quest-item ${quest.status}">
+                    <div class="quest-header">
+                        <h3 class="quest-title">${quest.title}</h3>
+                        <span class="quest-status ${quest.status}">
+                            ${quest.status === 'open' ? '🔓 Open' : 
+                              quest.status === 'claimed' ? '⚡ In Progress' : 
+                              '✅ Completed'}
+                        </span>
+                    </div>
+                    <p class="quest-description">${quest.description}</p>
+                    <div class="quest-meta">
+                        <div>
+                            <strong>Reward:</strong> <span class="quest-reward">${quest.reward}</span><br>
+                            <strong>Author:</strong> ${quest.author}
+                            ${quest.claimer ? `<br><strong>Claimed by:</strong> ${quest.claimer}` : ''}
+                            ${quest.completer ? `<br><strong>Completed by:</strong> ${quest.completer}` : ''}
+                        </div>
+                        <div>
+                            <div>${quest.created}</div>
+                            <div style="font-size:0.75rem;opacity:0.8">${quest.server}</div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+
+            // Populate leaderboard
+            const leaderboard = document.getElementById('leaderboard');
+            leaderboard.innerHTML = demoLeaderboard.map(user => `
+                <div class="leaderboard-item">
+                    <div class="rank">${user.rank}</div>
+                    <div class="user-avatar-small" style="display:flex;align-items:center;justify-content:center;font-weight:700;color:white;font-size:0.8rem">${user.avatar}</div>
+                    <div class="user-info-small">
+                        <h4>${user.name}</h4>
+                        <p>${user.created} created • ${user.claimed} claimed</p>
+                    </div>
+                    <div class="user-stats">${user.completed} completed</div>
+                </div>
+            `).join('');
+
+            // Update stats
+            const totalQuests = demoQuests.length;
+            const activeQuests = demoQuests.filter(q => q.status === 'open' || q.status === 'claimed').length;
+            const completedQuests = demoQuests.filter(q => q.status === 'completed').length;
+            const activeUsers = demoLeaderboard.length;
+
+            document.getElementById('totalQuests').textContent = totalQuests;
+            document.getElementById('activeQuests').textContent = activeQuests;
+            document.getElementById('completedQuests').textContent = completedQuests;
+            document.getElementById('activeUsers').textContent = activeUsers;
+        }
+
+        function selectServer(serverId) {
+            // Update active server
+            document.querySelectorAll('.server-card').forEach(card => {
+                card.classList.remove('active');
+            });
+            event.target.closest('.server-card').classList.add('active');
+            
+            // Filter quests by server (in a real implementation)
+            console.log(`Selected server: ${serverId}`);
+        }
+
+        function refreshData() {
+            const btn = event.target;
+            btn.disabled = true;
+            btn.innerHTML = '🔄 Refreshing...';
+            
+            setTimeout(() => {
+                populateDashboard();
+                btn.disabled = false;
+                btn.innerHTML = '🔄 Refresh';
+                
+                // Show success message
+                const originalBg = btn.style.background;
+                btn.style.background = 'linear-gradient(90deg, var(--success), #16a34a)';
+                btn.innerHTML = '✅ Updated';
+                
+                setTimeout(() => {
+                    btn.style.background = originalBg;
+                    btn.innerHTML = '🔄 Refresh';
+                }, 2000);
+            }, 1500);
+        }
+
+        function showCreateQuest() {
+            alert('🚧 Create Quest Feature\n\nThis would open a modal dialog to create a new quest with:\n\n• Quest Title\n• Description\n• Reward Details\n• Deadline (optional)\n• Target Server\n\nIn the full implementation, this would integrate with your Discord bot to post the quest automatically!');
+        }
+
+        function saveConfig() {
+            const btn = event.target;
+            btn.disabled = true;
+            btn.innerHTML = '💾 Saving...';
+            
+            setTimeout(() => {
+                btn.disabled = false;
+                btn.style.background = 'linear-gradient(90deg, var(--success), #16a34a)';
+                btn.innerHTML = '✅ Configuration Saved';
+                
+                setTimeout(() => {
+                    btn.style.background = 'linear-gradient(90deg, var(--accent), #4f46e5)';
+                    btn.innerHTML = '💾 Save Configuration';
+                }, 3000);
+            }, 1500);
+        }
+    </script>
+</body>
+</html>

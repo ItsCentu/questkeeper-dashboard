@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>QuestKeeper Dashboard — Discord Bot</title>
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root{
+            --bg1:#0f172a; --bg2:#071033; --accent:#7c3aed; --accent-2:#06b6d4;
+            --glass: rgba(255,255,255,0.06);
+            --glass-2: rgba(255,255,255,0.03);
+            --text: #e6eef8;
+            --success: #22c55e;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+        }
+        *{box-sizing:border-box}
+        html,body{height:100%;margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial;color:var(--text);background:linear-gradient(120deg,var(--bg1),var(--bg2));-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
+        
+        /* animated background blobs */
+        .bg-anim{position:fixed;inset:0;overflow:hidden;z-index:0;pointer-events:none}
+        .blob{
+            position:absolute;border-radius:50%;filter:blur(70px);
+            transform:translate3d(0,0,0);
+            opacity:0.6;
+            mix-blend-mode:screen;
+            animation:float 12s ease-in-out infinite;
+        }
+        .blob.b1{width:520px;height:520px;left:-10%;top:-10%;background:linear-gradient(45deg,var(--accent),#60a5fa);animation-duration:16s}
+        .blob.b2{width:420px;height:420px;right:-8%;top:10%;background:linear-gradient(45deg,var(--accent-2),#34d399);animation-duration:14s}
+        .blob.b3{width:300px;height:300px;left:20%;bottom:-12%;background:linear-gradient(45deg,#f43f5e,#fb923c);animation-duration:18s}
+        .blob.b4{width:250px;height:250px;right:15%;bottom:20%;background:linear-gradient(45deg,var(--accent),var(--accent-2));animation-duration:20s;animation-delay:-5s}
+        @keyframes float{
+            0%{transform:translateY(0) translateX(0) scale(1)}
+            33%{transform:translateY(-30px) translateX(20px) scale(1.02)}
+            66%{transform:translateY(20px) translateX(-25px) scale(0.98)}
+            100%{transform:translateY(0) translateX(0) scale(1)}
+        }
+
+        .container{position:relative;z-index:2;min-height:100vh;padding:2rem;text-align:center;display:flex;flex-direction:column;justify-content:center;align-items:center}
+        .hero{max-width:800px;margin:0 auto}
+        .hero h1{font-size:3.5rem;font-weight:800;margin:0 0 1rem;background:linear-gradient(90deg,var(--text),#94a3b8);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+        .hero p{font-size:1.2rem;color:#cfe7ff7a;margin-bottom:2rem;line-height:1.6}
+        
+        .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:16px 32px;border-radius:12px;font-weight:600;border:0;cursor:pointer;color:white;text-decoration:none;transition:all 0.3s ease;font-size:1.1rem}
+        .btn-primary{background:linear-gradient(90deg,var(--accent),#4f46e5);box-shadow:0 8px 25px rgba(124,58,237,0.25)}
+        .btn-secondary{background:var(--glass);border:2px solid var(--glass-2);color:var(--text);margin-left:1rem}
+        .btn:hover{transform:translateY(-2px);box-shadow:0 12px 35px rgba(124,58,237,0.4)}
+        
+        .features{margin-top:4rem;display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:2rem;max-width:1000px}
+        .feature{background:var(--glass);padding:2rem;border-radius:16px;border:1px solid var(--glass-2)}
+        .feature-icon{font-size:2.5rem;margin-bottom:1rem}
+        .feature h3{margin:0 0 1rem;color:var(--text)}
+        .feature p{color:#cfe7ff7a;margin:0;line-height:1.5}
+        
+        .notice{background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.3);border-radius:12px;padding:1.5rem;margin:2rem 0;max-width:600px}
+        .notice h3{color:var(--warning);margin:0 0 0.5rem}
+        .notice p{color:#cfe7ff7a;margin:0;font-size:0.95rem}
+        
+        @media (max-width:768px){
+            .hero h1{font-size:2.5rem}
+            .btn-secondary{margin-left:0;margin-top:1rem}
+            .features{grid-template-columns:1fr;gap:1.5rem}
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-anim" aria-hidden="true">
+        <div class="blob b1"></div>
+        <div class="blob b2"></div>
+        <div class="blob b3"></div>
+        <div class="blob b4"></div>
+    </div>
+
+    <div class="container">
+        <div class="hero">
+            <h1>QuestKeeper Dashboard</h1>
+            <p>Beautiful, animated Discord bot dashboard for managing quest systems in your Discord servers. Built with modern glassmorphism design and real-time functionality.</p>
+            
+            <div class="notice">
+                <h3>⚠️ GitHub Pages Limitation</h3>
+                <p>This is a demo version hosted on GitHub Pages. For full PHP/MySQL functionality including real Discord integration, database storage, and bot configuration, you'll need to host the PHP version on a server that supports PHP and MySQL.</p>
+            </div>
+            
+            <a href="#" class="btn btn-primary" onclick="loginWithDiscord()">
+                🎮 Try Demo Version
+            </a>
+            <a href="https://github.com/itscentu/questkeeper-dashboard" class="btn btn-secondary" target="_blank">
+                📁 View Source Code
+            </a>
+        </div>
+
+        <div class="features">
+            <div class="feature">
+                <div class="feature-icon">🎨</div>
+                <h3>Modern Design</h3>
+                <p>Beautiful glassmorphism interface with smooth animations and responsive layout that works on all devices.</p>
+            </div>
+            
+            <div class="feature">
+                <div class="feature-icon">⚡</div>
+                <h3>Real-time Management</h3>
+                <p>Manage quests, view statistics, and configure your bot settings in real-time with instant feedback.</p>
+            </div>
+            
+            <div class="feature">
+                <div class="feature-icon">🔍</div>
+                <h3>Server Search</h3>
+                <p>Quickly find and filter through your Discord servers with advanced search functionality.</p>
+            </div>
+            
+            <div class="feature">
+                <div class="feature-icon">📊</div>
+                <h3>Analytics Dashboard</h3>
+                <p>Track quest completion rates, user statistics, and server activity with detailed analytics.</p>
+            </div>
+            
+            <div class="feature">
+                <div class="feature-icon">⚙️</div>
+                <h3>Easy Configuration</h3>
+                <p>Configure bot channels, permissions, and settings through an intuitive web interface.</p>
+            </div>
+            
+            <div class="feature">
+                <div class="feature-icon">🤖</div>
+                <h3>Bot Integration</h3>
+                <p>Seamless integration with your Discord bot for quest management and server administration.</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Discord OAuth configuration
+        const CLIENT_ID = '1401648655999566035'; // Replace with your actual Client ID
+        const REDIRECT_URI = window.location.origin + window.location.pathname;
+        
+        function loginWithDiscord() {
+            alert('🚧 Demo Mode 🚧\n\nThis is the GitHub Pages demo version. For full functionality including:\n\n• Real Discord OAuth login\n• Database integration\n• Bot configuration\n• Quest management\n\nYou need to host the PHP version on a server with PHP/MySQL support.\n\nCheck the README.md for hosting options like Railway or Heroku!');
+        }
+
+        // Simple demo functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('QuestKeeper Dashboard Demo');
+            console.log('GitHub Pages Version - Limited Functionality');
+            console.log('For full features, deploy the PHP version to a hosting service');
+        });
+    </script>
+</body>
+</html>
