@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>QuestKeeper Dashboard — Discord Bot</title>
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root{
+            --bg1:#0f172a; --bg2:#071033; --accent:#7c3aed; --accent-2:#06b6d4;
+            --glass: rgba(255,255,255,0.06);
+            --glass-2: rgba(255,255,255,0.03);
+            --text: #e6eef8;
+            --success: #22c55e;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+        }
+        *{box-sizing:border-box}
+        html,body{height:100%;margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial;color:var(--text);background:linear-gradient(120deg,var(--bg1),var(--bg2));-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
+        
+        /* animated background blobs */
+        .bg-anim{position:fixed;inset:0;overflow:hidden;z-index:0;pointer-events:none}
+        .blob{
+            position:absolute;border-radius:50%;filter:blur(70px);
+            transform:translate3d(0,0,0);
+            opacity:0.6;
+            mix-blend-mode:screen;
+            animation:float 12s ease-in-out infinite;
+        }
+        .blob.b1{width:520px;height:520px;left:-10%;top:-10%;background:linear-gradient(45deg,var(--accent),#60a5fa);animation-duration:16s}
+        .blob.b2{width:420px;height:420px;right:-8%;top:10%;background:linear-gradient(45deg,var(--accent-2),#34d399);animation-duration:14s}
+        .blob.b3{width:300px;height:300px;left:20%;bottom:-12%;background:linear-gradient(45deg,#f43f5e,#fb923c);animation-duration:18s}
+        .blob.b4{width:250px;height:250px;right:15%;bottom:20%;background:linear-gradient(45deg,var(--accent),var(--accent-2));animation-duration:20s;animation-delay:-5s}
+        @keyframes float{
+            0%{transform:translateY(0) translateX(0) scale(1)}
+            33%{transform:translateY(-30px) translateX(20px) scale(1.02)}
+            66%{transform:translateY(20px) translateX(-25px) scale(0.98)}
+            100%{transform:translateY(0) translateX(0) scale(1)}
+        }
+
+        /* Same CSS as your dashboard.php file */
+        .dashboard-container{position:relative;z-index:2;min-height:100vh;padding:2rem}
+        .header{max-width:1400px;margin:0 auto 2rem;display:flex;justify-content:space-between;align-items:center;padding:0 1rem}
+        .header h1{margin:0;font-size:1.8rem;font-weight:700}
+        .user-info{display:flex;align-items:center;gap:12px;background:var(--glass);padding:8px 16px;border-radius:12px;border:1px solid var(--glass-2)}
+        .user-avatar{width:32px;height:32px;border-radius:50%;background:linear-gradient(45deg,var(--accent),var(--accent-2))}
+        
+        .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:10px 16px;border-radius:8px;font-weight:500;border:0;cursor:pointer;color:white;text-decoration:none;transition:all 0.2s ease}
+        .btn-primary{background:linear-gradient(90deg,var(--accent),#4f46e5);box-shadow:0 4px 16px rgba(124,58,237,0.25)}
+        .btn-secondary{background:var(--glass);border:1px solid var(--glass-2);color:var(--text)}
+        .btn:hover{transform:translateY(-1px)}
+        
+        .auth-container{text-align:center;padding:60px 20px}
+        .auth-card{background:var(--glass);padding:40px;border-radius:16px;border:1px solid var(--glass-2);max-width:400px;margin:0 auto}
+    </style>
+</head>
+<body>
+    <div class="bg-anim" aria-hidden="true">
+        <div class="blob b1"></div>
+        <div class="blob b2"></div>
+        <div class="blob b3"></div>
+        <div class="blob b4"></div>
+    </div>
+
+    <div class="dashboard-container">
+        <header class="header">
+            <h1>QuestKeeper Dashboard</h1>
+            <div class="user-info" id="userInfo" style="display:none;">
+                <div class="user-avatar" id="userAvatar"></div>
+                <span class="user-name" id="userName">Loading...</span>
+                <button class="btn btn-secondary" onclick="logout()">Logout</button>
+            </div>
+        </header>
+
+        <div id="authContainer" class="auth-container">
+            <div class="auth-card">
+                <h2 style="margin-top:0;color:var(--text);">Welcome to QuestKeeper</h2>
+                <p style="color:#cfe7ff7a;margin-bottom:30px;">Connect your Discord account to access the dashboard</p>
+                <button class="btn btn-primary" onclick="loginWithDiscord()">
+                    🎮 Login with Discord
+                </button>
+            </div>
+        </div>
+
+        <div id="dashboardContent" style="display:none;">
+            <p style="text-align:center;color:var(--text);font-size:1.2rem;margin:40px 0;">
+                🚧 Dashboard coming soon! 🚧
+            </p>
+            <p style="text-align:center;color:#cfe7ff7a;">
+                Your Discord servers and bot configuration will appear here.
+            </p>
+        </div>
+    </div>
+
+    <script>
+        // Discord OAuth configuration
+        const CLIENT_ID = '1401648655999566035';
+        const REDIRECT_URI = window.location.origin + window.location.pathname;
+        
+        // Check for OAuth callback
+        const urlParams = new URLSearchParams(window.location.search);
+        const code = urlParams.get('code');
+        const error = urlParams.get('error');
+
+        if (error) {
+            alert('OAuth Error: ' + error);
+        } else if (code) {
+            // Handle OAuth callback
+            handleOAuthCallback(code);
+        } else {
+            // Check if user is already logged in (stored in localStorage)
+            const userData = localStorage.getItem('discordUser');
+            if (userData) {
+                showDashboard(JSON.parse(userData));
+            }
+        }
+
+        function loginWithDiscord() {
+            const oauthUrl = `https://discord.com/api/oauth2/authorize?` + 
+                `client_id=${CLIENT_ID}&` +
+                `redirect_uri=${encodeURIComponent(REDIRECT_URI)}&` +
+                `response_type=code&` +
+                `scope=identify guilds`;
+            
+            window.location.href = oauthUrl;
+        }
+
+        async function handleOAuthCallback(code) {
+            try {
+                // Note: In a real static implementation, you'd need a serverless function
+                // or CORS proxy to handle the token exchange since Discord doesn't allow
+                // CORS requests from browsers to their token endpoint.
+                
+                alert('OAuth callback received! In a full implementation, this would exchange the code for user data.');
+                
+                // For demo purposes, simulate logged in user
+                const mockUser = {
+                    id: '123456789',
+                    username: 'Demo User',
+                    avatar: null
+                };
+                
+                localStorage.setItem('discordUser', JSON.stringify(mockUser));
+                showDashboard(mockUser);
+                
+                // Clean up URL
+                window.history.replaceState({}, document.title, window.location.pathname);
+                
+            } catch (error) {
+                console.error('OAuth error:', error);
+                alert('Failed to log in with Discord. Please try again.');
+            }
+        }
+
+        function showDashboard(userData) {
+            document.getElementById('authContainer').style.display = 'none';
+            document.getElementById('dashboardContent').style.display = 'block';
+            document.getElementById('userInfo').style.display = 'flex';
+            
+            document.getElementById('userName').textContent = userData.username;
+            
+            if (userData.avatar) {
+                document.getElementById('userAvatar').style.backgroundImage = 
+                    `url('https://cdn.discordapp.com/avatars/${userData.id}/${userData.avatar}.png')`;
+                document.getElementById('userAvatar').style.backgroundSize = 'cover';
+            }
+        }
+
+        function logout() {
+            localStorage.removeItem('discordUser');
+            document.getElementById('authContainer').style.display = 'block';
+            document.getElementById('dashboardContent').style.display = 'none';
+            document.getElementById('userInfo').style.display = 'none';
+        }
+    </script>
+</body>
+</html>
