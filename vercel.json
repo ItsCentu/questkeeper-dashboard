@@ -1,0 +1,18 @@
+{
+  "buildCommand": "echo 'No build needed for static site'",
+  "outputDirectory": ".",
+  "rewrites": [
+    {
+      "source": "/",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/dashboard",
+      "destination": "/static-dashboard.html"
+    },
+    {
+      "source": "/homepage",
+      "destination": "/homepage.html"
+    }
+  ]
+}

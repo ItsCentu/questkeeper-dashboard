@@ -151,20 +151,8 @@
         // Wire buttons
         document.getElementById('inviteBtn').href = inviteLink;
         document.getElementById('dashboardBtn').addEventListener('click', function () {
-            // Basic anti-UI-block animation then redirect
-            this.disabled = true;
-            this.textContent = "Redirecting to Discord…";
-            setTimeout(() => {
-                // If developer forgot to set clientId/redirect, show a helpful console message
-                if (!clientId || clientId === "YOUR_CLIENT_ID" || !oauthRedirect || oauthRedirect === encodeURIComponent("YOUR_REDIRECT_URI")) {
-                    console.error("Please configure clientId and oauthRedirect variables in homepage.html to enable the Dashboard login.");
-                    alert("Dashboard not configured. Please set clientId and redirect URI in the homepage file.");
-                    this.disabled = false;
-                    this.textContent = "Dashboard";
-                    return;
-                }
-                window.location.href = oauthUrl;
-            }, 400);
+            // Redirect directly to dashboard
+            window.location.href = '/dashboard';
         });
     </script>
 </body>

@@ -1,0 +1,14 @@
+{
+  "name": "questkeeper-dashboard",
+  "version": "1.0.0",
+  "description": "Discord bot dashboard with real Discord API integration",
+  "main": "index.html",
+  "scripts": {
+    "dev": "vercel dev",
+    "build": "echo 'Static site - no build needed'",
+    "deploy": "vercel --prod"
+  },
+  "keywords": ["discord", "bot", "dashboard", "questkeeper"],
+  "author": "ItsCentu",
+  "license": "MIT"
+}
