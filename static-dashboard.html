@@ -335,85 +335,110 @@
         async function handleOAuthCallback(code) {
             // Show loading message
             document.querySelector('.auth-card h2').textContent = 'Connecting to Discord...';
-            document.querySelector('.auth-card p').textContent = 'Getting your Discord profile and servers...';
+            document.querySelector('.auth-card p').textContent = 'Getting your real Discord profile and servers...';
             document.querySelector('.auth-card button').disabled = true;
             document.querySelector('.auth-card button').innerHTML = '🔄 Connecting...';
             
             try {
-                // Try multiple approaches to get Discord data
-                let userData = null;
-                let guildsData = [];
+                // Try to use real Discord API via serverless function
+                const apiEndpoint = '/api/discord-auth'; // Will work with Vercel/Netlify
                 
-                // Method 1: Try using a public CORS proxy
-                try {
-                    console.log('Attempting Discord API calls...');
+                console.log('Attempting real Discord API call...');
+                
+                const response = await fetch(apiEndpoint, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ code: code })
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
                     
-                    // Since we can't securely exchange tokens client-side, 
-                    // we'll simulate what the response would look like based on the OAuth callback
-                    // In a real implementation, this would be handled by a serverless function
-                    
-                    // For now, we'll create a realistic user based on the successful OAuth
-                    // The fact that we got a code means Discord authenticated the user
-                    
-                    // Generate a realistic Discord user ID (18 digits)
-                    const discordUserId = Date.now().toString() + Math.floor(Math.random() * 1000).toString().padStart(3, '0');
-                    
-                    // Try to extract any user info from the URL or localStorage if available
-                    const urlInfo = new URLSearchParams(window.location.search);
-                    const state = urlInfo.get('state'); // Could contain encoded user info
-                    
-                    userData = {
-                        id: discordUserId,
-                        username: 'DiscordUser_' + discordUserId.slice(-4),
-                        global_name: 'Discord User',
-                        discriminator: '0001',
-                        avatar: null,
-                        verified: true,
-                        flags: 0,
-                        premium_type: 0,
-                        public_flags: 0
-                    };
-                    
-                    // Generate realistic guild data
-                    guildsData = [
-                        {
-                            id: '1001234567890123456',
-                            name: 'My Gaming Server',
-                            icon: null,
-                            owner: true,
-                            permissions: '8',
-                            features: []
-                        },
-                        {
-                            id: '1001234567890123457', 
-                            name: 'Friends Hangout',
-                            icon: null,
-                            owner: false,
-                            permissions: '37080640',
-                            features: []
-                        },
-                        {
-                            id: '1001234567890123458',
-                            name: 'Quest Guild',
-                            icon: null,
-                            owner: false,
-                            permissions: '37080640', 
-                            features: []
-                        }
-                    ];
-                    
-                    console.log('Generated Discord-like user data');
-                    
-                } catch (apiError) {
-                    console.log('API calls failed, using fallback:', apiError);
-                    throw apiError;
-                }
+                    if (data.success) {
+                        console.log('✅ Successfully got real Discord data!');
+                        
+                        // Store REAL Discord data
+                        const completeUserData = {
+                            ...data.user,
+                            guilds: data.guilds,
+                            isRealDiscordUser: true,
+                            isActuallyReal: true, // Flag for truly real data
+                            loginTime: new Date().toISOString()
+                        };
 
-                // Store both user data and guilds
+                        localStorage.setItem('discordUser', JSON.stringify(completeUserData));
+                        showDashboard(completeUserData);
+                        
+                        // Clean up URL
+                        window.history.replaceState({}, document.title, window.location.pathname);
+                        return;
+                    }
+                }
+                
+                throw new Error('API call failed');
+                
+            } catch (error) {
+                console.warn('Real Discord API failed, using fallback:', error);
+                
+                // If real API fails, try to extract what we can from the OAuth callback
+                // The fact that we got here means Discord DID authenticate the user
+                
+                // Reset UI to show we're trying fallback
+                document.querySelector('.auth-card h2').textContent = 'API Unavailable - Using Fallback';
+                document.querySelector('.auth-card p').textContent = 'Creating realistic demo data based on your OAuth login...';
+                
+                // Generate realistic fallback data based on successful OAuth
+                const discordUserId = Date.now().toString() + Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+                
+                const userData = {
+                    id: discordUserId,
+                    username: 'AuthenticatedUser_' + discordUserId.slice(-4),
+                    global_name: 'Discord User',
+                    discriminator: Math.floor(Math.random() * 9999).toString().padStart(4, '0'),
+                    avatar: null,
+                    verified: true,
+                    flags: 0,
+                    premium_type: Math.floor(Math.random() * 3),
+                    public_flags: 0
+                };
+                
+                // Generate realistic guild data
+                const guildsData = [
+                    {
+                        id: Date.now().toString() + '001',
+                        name: 'My Gaming Server',
+                        icon: null,
+                        owner: true,
+                        permissions: '8',
+                        features: ['COMMUNITY', 'NEWS']
+                    },
+                    {
+                        id: Date.now().toString() + '002', 
+                        name: 'Friends Hangout',
+                        icon: null,
+                        owner: false,
+                        permissions: '37080640',
+                        features: []
+                    },
+                    {
+                        id: Date.now().toString() + '003',
+                        name: 'Quest Guild',
+                        icon: null,
+                        owner: false,
+                        permissions: '37080640', 
+                        features: ['COMMUNITY']
+                    }
+                ];
+
+                // Store fallback data with clear indicators
                 const completeUserData = {
                     ...userData,
                     guilds: guildsData,
-                    isRealDiscordUser: true, // Flag to indicate this came from OAuth
+                    isRealDiscordUser: true, // They did OAuth login
+                    isActuallyReal: false, // But data is generated
+                    attemptedRealLogin: true,
                     loginTime: new Date().toISOString()
                 };
 
@@ -422,35 +447,6 @@
                 
                 // Clean up URL
                 window.history.replaceState({}, document.title, window.location.pathname);
-                
-            } catch (error) {
-                console.error('OAuth error:', error);
-                
-                // Reset the UI first
-                document.querySelector('.auth-card h2').textContent = 'Discord Login Failed';
-                document.querySelector('.auth-card p').textContent = 'Unable to connect to Discord API. Using demo mode instead.';
-                document.querySelector('.auth-card button').disabled = false;
-                document.querySelector('.auth-card button').innerHTML = 'Try Again';
-                
-                setTimeout(() => {
-                    // Create a demo user but with a note that OAuth was attempted
-                    const demoUser = {
-                        id: Math.random().toString().substr(2, 18),
-                        username: 'DemoUser_' + Math.floor(Math.random() * 1000),
-                        global_name: 'Demo User',
-                        discriminator: '0001',
-                        avatar: null,
-                        guilds: [], // Will use demo guilds
-                        isDemoMode: true,
-                        attemptedRealLogin: true
-                    };
-                    
-                    localStorage.setItem('discordUser', JSON.stringify(demoUser));
-                    showDashboard(demoUser);
-                    
-                    // Clean up URL
-                    window.history.replaceState({}, document.title, window.location.pathname);
-                }, 2000);
             }
         }
 
@@ -459,21 +455,21 @@
             document.getElementById('dashboardContent').style.display = 'block';
             document.getElementById('userInfo').style.display = 'flex';
             
-            // Display Discord username with status indicator
+            // Display Discord username with clear status indicator
             const displayName = userData.global_name || userData.username || 'Discord User';
             const userName = document.getElementById('userName');
             
-            if (userData.isRealDiscordUser) {
-                userName.textContent = displayName;
-                userName.style.color = '#22c55e'; // Green for real users
-                userName.title = 'Authenticated Discord User';
-            } else if (userData.attemptedRealLogin) {
-                userName.textContent = displayName + ' (Demo)';
-                userName.style.color = '#f59e0b'; // Orange for failed real login
-                userName.title = 'Demo Mode - Discord API unavailable';
+            if (userData.isActuallyReal) {
+                userName.textContent = displayName + ' ✅';
+                userName.style.color = '#22c55e'; // Green for actually real users
+                userName.title = 'Real Discord User - Live API Data';
+            } else if (userData.isRealDiscordUser) {
+                userName.textContent = displayName + ' ⚠️';
+                userName.style.color = '#f59e0b'; // Orange for OAuth but fallback data
+                userName.title = 'Authenticated Discord User - Fallback Data';
             } else {
                 userName.textContent = displayName + ' (Demo)';
-                userName.style.color = '#94a3b8'; // Gray for demo
+                userName.style.color = '#94a3b8'; // Gray for pure demo
                 userName.title = 'Demo Mode';
             }
             
@@ -500,11 +496,11 @@
                 let welcomeText = '';
                 let bgColor = '';
                 
-                if (userData.isRealDiscordUser) {
-                    welcomeText = `🎉 Successfully connected to Discord! Welcome, ${displayName}!`;
+                if (userData.isActuallyReal) {
+                    welcomeText = `🎉 REAL Discord data loaded! Welcome, ${displayName}!`;
                     bgColor = 'linear-gradient(90deg, var(--success), #16a34a)';
-                } else if (userData.attemptedRealLogin) {
-                    welcomeText = `⚠️ Discord API unavailable. Running in demo mode for ${displayName}`;
+                } else if (userData.isRealDiscordUser) {
+                    welcomeText = `⚠️ Discord authenticated but API unavailable. Using fallback for ${displayName}`;
                     bgColor = 'linear-gradient(90deg, var(--warning), #f59e0b)';
                 } else {
                     welcomeText = `👋 Welcome to the demo dashboard!`;
@@ -527,7 +523,7 @@
                     if (welcomeMsg.parentNode) {
                         welcomeMsg.remove();
                     }
-                }, userData.isRealDiscordUser ? 4000 : 6000);
+                }, userData.isActuallyReal ? 5000 : 6000);
             }, 1000);
             
             // Populate dashboard with hybrid data
@@ -671,11 +667,11 @@
             
             // Update data status indicator
             const dataStatus = document.getElementById('dataStatus');
-            if (userData.isRealDiscordUser) {
-                dataStatus.innerHTML = '<span>🟢</span> Live Discord Data';
+            if (userData.isActuallyReal) {
+                dataStatus.innerHTML = '<span>🟢</span> REAL Discord API Data';
                 dataStatus.className = 'data-status real';
-            } else if (userData.attemptedRealLogin) {
-                dataStatus.innerHTML = '<span>🟡</span> Demo Mode (API Unavailable)';
+            } else if (userData.isRealDiscordUser) {
+                dataStatus.innerHTML = '<span>🟡</span> Authenticated (Fallback Data)';
                 dataStatus.className = 'data-status demo';
             } else {
                 dataStatus.innerHTML = '<span>⚪</span> Demo Mode';
