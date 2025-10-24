@@ -340,10 +340,15 @@
             document.querySelector('.auth-card button').innerHTML = '🔄 Connecting...';
             
             try {
-                // Try to use real Discord API via serverless function
-                const apiEndpoint = '/api/discord-auth'; // Will work with Vercel/Netlify
+                // Try to use real Discord API via serverless function or PHP
+                let apiEndpoint = '/api/discord-auth'; // Vercel/Netlify endpoint
                 
-                console.log('Attempting real Discord API call...');
+                // If we're on GitHub Pages, try the PHP version instead
+                if (window.location.hostname.includes('github.io')) {
+                    apiEndpoint = 'https://your-php-hosting.com/BotDashboard/api/discord-auth.php';
+                }
+                
+                console.log('Attempting real Discord API call to:', apiEndpoint);
                 
                 const response = await fetch(apiEndpoint, {
                     method: 'POST',
@@ -357,7 +362,7 @@
                     const data = await response.json();
                     
                     if (data.success) {
-                        console.log('✅ Successfully got real Discord data!');
+                        console.log('✅ Successfully got REAL Discord data!');
                         
                         // Store REAL Discord data
                         const completeUserData = {
