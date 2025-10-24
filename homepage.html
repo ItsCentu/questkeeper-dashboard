@@ -138,21 +138,20 @@
     </main>
 
     <script>
-        // SETTINGS - GitHub Pages Configuration  
-        // Updated for GitHub Pages hosting at: https://itscentu.github.io/questkeeper-dashboard/
+        // Discord OAuth configuration for Vercel deployment
         const inviteLink = "https://discord.com/oauth2/authorize?client_id=1401648655999566035&permissions=8&scope=bot";
         const clientId = "1401648655999566035";
-        const oauthRedirect = encodeURIComponent("https://itscentu.github.io/questkeeper-dashboard/static-dashboard.html");
-        const scopes = encodeURIComponent("identify guilds");
-
-        // Construct OAuth2 URL for user login (replace placeholders)
-        const oauthUrl = `https://discord.com/api/oauth2/authorize?client_id=${clientId}&redirect_uri=${oauthRedirect}&response_type=code&scope=${scopes}`;
-
+        
         // Wire buttons
         document.getElementById('inviteBtn').href = inviteLink;
         document.getElementById('dashboardBtn').addEventListener('click', function () {
-            // Redirect directly to dashboard
-            window.location.href = '/dashboard';
+            // Trigger Discord OAuth for real authentication
+            const clientId = '1401648655999566035';
+            const redirectUri = window.location.origin + '/dashboard';
+            const scopes = 'identify guilds';
+            
+            const oauthUrl = `https://discord.com/api/oauth2/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=${encodeURIComponent(scopes)}`;
+            window.location.href = oauthUrl;
         });
     </script>
 </body>
